@@ -187,7 +187,7 @@ hljs.initHighlightingOnLoad();
 
 <p>I try to predict the manner in which they did the Weight Lifting Exercises<a href="http://groupware.les.inf.puc-rio.br/har">Human Activity Recognition</a> and <a href="http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf">original paper</a>.<br/>
 I study a basic summary of the data (str(),cor(),boxplot()), then extract significant predictor variables and also exclude an outlier from <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">provided training dataset</a>.<br/>
-I create model using Random Forest as original paper did and tuned it in ntree=100, mtry=p/3=18. The model shows excellent accuracy(0.999,almost equal to 1.0).<br/>
+I create model using Random Forest as original paper did and tuned it in ntree=100, mtry=p/3=18. The model shows excellent accuracy(0.9986,almost equal to 1.0).<br/>
 Finally, I predict the manner for <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">provided test dataset</a> and save them to the file according to the instruction of submission.  </p>
 
 <h2>Data Processing</h2>
@@ -258,15 +258,16 @@ dim(training_ana);dim(training_ana_exoutliers)  ## observe only one outlier data
 <h2>Create model by the training data</h2>
 
 <p>5.try Random Forest in default setting(ntree=500 and mtry=sqrt(p)) without cross-validation.<br/>
- The result shows very low classification error(below 0.004) and OOB error (0.15%) and the performance on the plot becomes stable after ntree = 90.   </p>
+ The result shows very low classification error(below 0.004) and OOB error (0.14%) and the performance on the plot becomes stable after ntree = 100.   </p>
 
 <p>6.tune parameter(ntree and mtry) on cross validation data set (10 k-fold)<br/>
- By the previous result, choose ntree =100 ( &gt; 90 ).<br/>
+ By the previous result, choose ntree =100.<br/>
  After evaluation some mtry(sqrt(p),p/3,p/2,p), then choose mtry = p/3=18.<br/>
  The result shows excellent classification accuracy(almost equal to 1.0).  </p>
 
 <pre><code class="r">## 5.try Random Forest in default setting(ntree=500 and mtry=sqrt(p)) without cross-validation  
 library(&quot;caret&quot;)
+set.seed (1)
 p &lt;- ncol(training_ana)-1   ## number of predictor variables
 fit&lt;-randomForest(classe~.,data=training_ana_exoutliers,ntree=500,mtry=ceiling(sqrt(p)))
 fit
@@ -279,22 +280,23 @@ fit
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 8
 ## 
-##         OOB estimate of  error rate: 0.12%
+##         OOB estimate of  error rate: 0.14%
 ## Confusion matrix:
 ##      A    B    C    D    E class.error
 ## A 5578    0    0    0    1   0.0001792
 ## B    3 3793    1    0    0   0.0010535
 ## C    0    6 3416    0    0   0.0017534
-## D    0    0   10 3205    1   0.0034204
-## E    0    0    0    2 3605   0.0005545
+## D    0    0   11 3204    1   0.0037313
+## E    0    0    0    4 3603   0.0011090
 </code></pre>
 
 <pre><code class="r">plot(fit)
 </code></pre>
 
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAH4CAMAAACR9g9NAAAAgVBMVEX9/v0AAAAAADkAAGUAAP8AOTkAOY8AZrUAzQAA//85AAA5ADk5AGU5OWU5OY85j9plAABlADllAGVlOQBltf2POQCPOTmPOWWPtY+P27WP29qP2/21ZgC124+1/tq1/v3ajzna24/a/rXa/v39tWX924/9/rX9/tr9/v3/AAD/AP/ddjV1AAAAK3RSTlP/////////////////////////////////////////////////////AP//sFN8sAAAAAlwSFlzAAALEgAACxIB0t1+/AAADgdJREFUeJztnQtD20YWRivQBplNY7KFdHdxF3eLseL//wOr0cvyC2Q0vnPhOycJNkK+FjmaOw+PNL+UIMkvqQ8A0oB4URAvCuJFQbwoiBcF8aIgXhTEi4J4URAvCuJFQbwoiBcF8aIgXhTEi4J4URAvCuJFQbwoiBcF8aIgXhTEi4L4itVtdvWfu+unslzcpz4WKxBfscju9558fhBfrh+yLPvy/7vr/4UnN6kPxwjEI16XkOFfQh1PqtcC8aIgXhTEizIQT+NOiV786jb78lfqo7EB8aIgXhTEi4J4URAvCuJFQbwoiBcF8aIgXhTEi4J4URAvCuJFQbwoiBcF8aIgXhTEi4J4URAvCuJFQbwoU8Rn4JkLip/wWrg0iBcF8aIgXhTEi4J4URAvCuJFQbwoiBcF8aIgXhQ78bMJoSA6iBcF8aJMFr+6rT/dDbfxfz004l0xVfz6obnL5/Phnf8Q75mp4l/+9bTzeDo04l1BiRdlch3/ckcd/xFhAEcUxItCP14UxIsyuTt3187PP2zdId4zk0v8+mE+LjTiXTE91b98f9wLefwiHcS7gjpeFMSLEks8Y/UfDAZwREG8KEzEEIWPZUVhIoYolHhRmIghCgM4oiBeFMSLwgCOKIgXhVQvCuJFQbwoiBfFsHGHeU8gXhQ78QXiPYF4URjAEQXxopDqRUG8KHTnREG8KKR6URAvCqleFMSLYii+mBALYoN4UUj1oiBeFMSLgnhREC8K4kVBvCiIF4WpV6IgXhRSvSiIFwXxoiBeFMSLgnhREC8K4kVh6pUoMRYquFmOuYkx4l0x+bblPx7L5U3l/9tbty0n1bsixkIFy/mYhQoQ7wpKvCgx6vj5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" alt="plot of chunk model"/> </p>
+<p><img src="data:image/png;base64,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" alt="plot of chunk model"/> </p>
 
 <pre><code class="r">## 6.tune parameter(ntree and mtry) on cross validation data set (10 k-fold)    
+set.seed (1)
 fitControl &lt;- trainControl( method = &quot;cv&quot;,  number = 10)  ## 10 k-fold
 tGrid  &lt;-  expand.grid(mtry= c(ceiling(sqrt(p)),ceiling(p/3),ceiling(p/2),p))
 fittune&lt;-train(classe~.,data=training_ana_exoutliers,method=&quot;rf&quot;,ntree=100,trControl = fitControl,tuneGrid = tGrid,trace=F)
@@ -310,27 +312,28 @@ fittune
 ## No pre-processing
 ## Resampling: Cross-Validated (10 fold) 
 ## 
-## Summary of sample sizes: 17659, 17657, 17658, 17659, 17660, 17659, ... 
+## Summary of sample sizes: 17661, 17660, 17659, 17659, 17659, 17658, ... 
 ## 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy  Kappa  Accuracy SD  Kappa SD
-##    8    1         1      1e-03        0.001   
-##   18    1         1      9e-04        0.001   
-##   27    1         1      9e-04        0.001   
-##   53    1         1      2e-03        0.002   
+##    8    1         1      8e-04        0.001   
+##   18    1         1      1e-03        0.001   
+##   27    1         1      1e-03        0.002   
+##   53    1         1      2e-03        0.003   
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 18.
+## The final value used for the model was mtry = 8.
 </code></pre>
 
 <h2>Predict the manner for the test data</h2>
 
 <p>7.predict the manner for the test data on the tuned randomForest model<br/>
- The final model shows classification accuracy(0.999) for training data.<br/>
+ The final model shows classification accuracy(0.9986) for training data.<br/>
 8.save the prediction result to the file according to the instruction of submission.</p>
 
 <pre><code class="r">## 7. predict the manner for the test data on the tuned randomForest model
+set.seed (1)
 fitControl &lt;- trainControl( method = &quot;cv&quot;,  number = 10)  ## 10 k-fold
 tGrid  &lt;-  expand.grid(mtry= c(ceiling(p/3)))
 fitfinal&lt;-train(classe~.,data=training_ana_exoutliers,method=&quot;rf&quot;,ntree=100,trControl = fitControl,tuneGrid = tGrid,trace=F)
@@ -346,12 +349,12 @@ fitfinal
 ## No pre-processing
 ## Resampling: Cross-Validated (10 fold) 
 ## 
-## Summary of sample sizes: 17659, 17659, 17660, 17660, 17658, 17660, ... 
+## Summary of sample sizes: 17661, 17660, 17659, 17659, 17659, 17658, ... 
 ## 
 ## Resampling results
 ## 
 ##   Accuracy  Kappa  Accuracy SD  Kappa SD
-##   1         1      0.002        0.002   
+##   1         1      0.001        0.001   
 ## 
 ## Tuning parameter &#39;mtry&#39; was held constant at a value of 18
 ## 
@@ -361,7 +364,7 @@ fitfinal
 </code></pre>
 
 <pre><code>##   mtry Accuracy  Kappa AccuracySD  KappaSD
-## 1   18   0.9985 0.9981   0.001671 0.002113
+## 1   18   0.9986 0.9982   0.001041 0.001317
 </code></pre>
 
 <pre><code class="r">answers &lt;-predict(fitfinal,testing_ana)  

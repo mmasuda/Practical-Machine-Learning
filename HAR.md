@@ -4,7 +4,7 @@
 ## Synopsis   
 I try to predict the manner in which they did the Weight Lifting Exercises[Human Activity Recognition](http://groupware.les.inf.puc-rio.br/har) and [original paper](http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf).  
 I study a basic summary of the data (str(),cor(),boxplot()), then extract significant predictor variables and also exclude an outlier from [provided training dataset](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).  
-I create model using Random Forest as original paper did and tuned it in ntree=100, mtry=p/3=18. The model shows excellent accuracy(0.999,almost equal to 1.0).  
+I create model using Random Forest as original paper did and tuned it in ntree=100, mtry=p/3=18. The model shows excellent accuracy(0.9986,almost equal to 1.0).  
 Finally, I predict the manner for [provided test dataset](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv) and save them to the file according to the instruction of submission.  
 
 ## Data Processing  
@@ -76,16 +76,17 @@ dim(training_ana);dim(training_ana_exoutliers)  ## observe only one outlier data
 ```
 ## Create model by the training data   
 5.try Random Forest in default setting(ntree=500 and mtry=sqrt(p)) without cross-validation.     
- The result shows very low classification error(below 0.004) and OOB error (0.15%) and the performance on the plot becomes stable after ntree = 90.   
+ The result shows very low classification error(below 0.004) and OOB error (0.14%) and the performance on the plot becomes stable after ntree = 100.   
    
 6.tune parameter(ntree and mtry) on cross validation data set (10 k-fold)     
- By the previous result, choose ntree =100 ( > 90 ).  
+ By the previous result, choose ntree =100.    
  After evaluation some mtry(sqrt(p),p/3,p/2,p), then choose mtry = p/3=18.  
  The result shows excellent classification accuracy(almost equal to 1.0).  
 
 ```r
 ## 5.try Random Forest in default setting(ntree=500 and mtry=sqrt(p)) without cross-validation  
 library("caret")
+set.seed (1)
 p <- ncol(training_ana)-1   ## number of predictor variables
 fit<-randomForest(classe~.,data=training_ana_exoutliers,ntree=500,mtry=ceiling(sqrt(p)))
 fit
@@ -99,14 +100,14 @@ fit
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 8
 ## 
-##         OOB estimate of  error rate: 0.12%
+##         OOB estimate of  error rate: 0.14%
 ## Confusion matrix:
 ##      A    B    C    D    E class.error
 ## A 5578    0    0    0    1   0.0001792
 ## B    3 3793    1    0    0   0.0010535
 ## C    0    6 3416    0    0   0.0017534
-## D    0    0   10 3205    1   0.0034204
-## E    0    0    0    2 3605   0.0005545
+## D    0    0   11 3204    1   0.0037313
+## E    0    0    0    4 3603   0.0011090
 ```
 
 ```r
@@ -117,6 +118,7 @@ plot(fit)
 
 ```r
 ## 6.tune parameter(ntree and mtry) on cross validation data set (10 k-fold)    
+set.seed (1)
 fitControl <- trainControl( method = "cv",  number = 10)  ## 10 k-fold
 tGrid  <-  expand.grid(mtry= c(ceiling(sqrt(p)),ceiling(p/3),ceiling(p/2),p))
 fittune<-train(classe~.,data=training_ana_exoutliers,method="rf",ntree=100,trControl = fitControl,tuneGrid = tGrid,trace=F)
@@ -133,27 +135,28 @@ fittune
 ## No pre-processing
 ## Resampling: Cross-Validated (10 fold) 
 ## 
-## Summary of sample sizes: 17659, 17657, 17658, 17659, 17660, 17659, ... 
+## Summary of sample sizes: 17661, 17660, 17659, 17659, 17659, 17658, ... 
 ## 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy  Kappa  Accuracy SD  Kappa SD
-##    8    1         1      1e-03        0.001   
-##   18    1         1      9e-04        0.001   
-##   27    1         1      9e-04        0.001   
-##   53    1         1      2e-03        0.002   
+##    8    1         1      8e-04        0.001   
+##   18    1         1      1e-03        0.001   
+##   27    1         1      1e-03        0.002   
+##   53    1         1      2e-03        0.003   
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 18.
+## The final value used for the model was mtry = 8.
 ```
 
 ## Predict the manner for the test data  
 7.predict the manner for the test data on the tuned randomForest model  
- The final model shows classification accuracy(0.999) for training data.  
+ The final model shows classification accuracy(0.9986) for training data.  
 8.save the prediction result to the file according to the instruction of submission.
 
 ```r
 ## 7. predict the manner for the test data on the tuned randomForest model
+set.seed (1)
 fitControl <- trainControl( method = "cv",  number = 10)  ## 10 k-fold
 tGrid  <-  expand.grid(mtry= c(ceiling(p/3)))
 fitfinal<-train(classe~.,data=training_ana_exoutliers,method="rf",ntree=100,trControl = fitControl,tuneGrid = tGrid,trace=F)
@@ -170,12 +173,12 @@ fitfinal
 ## No pre-processing
 ## Resampling: Cross-Validated (10 fold) 
 ## 
-## Summary of sample sizes: 17659, 17659, 17660, 17660, 17658, 17660, ... 
+## Summary of sample sizes: 17661, 17660, 17659, 17659, 17659, 17658, ... 
 ## 
 ## Resampling results
 ## 
 ##   Accuracy  Kappa  Accuracy SD  Kappa SD
-##   1         1      0.002        0.002   
+##   1         1      0.001        0.001   
 ## 
 ## Tuning parameter 'mtry' was held constant at a value of 18
 ## 
@@ -187,7 +190,7 @@ fitfinal$results
 
 ```
 ##   mtry Accuracy  Kappa AccuracySD  KappaSD
-## 1   18   0.9985 0.9981   0.001671 0.002113
+## 1   18   0.9986 0.9982   0.001041 0.001317
 ```
 
 ```r
